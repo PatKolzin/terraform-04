@@ -1,116 +1,101 @@
-# Домашнее задание к занятию "Продвинутые методы работы с Terraform"
+# Домашнее задание к занятию «Использование Terraform в команде»
+
 
 ### Задание 1
 
-1. Возьмите из [демонстрации к лекции готовый код](https://github.com/netology-code/ter-homeworks/tree/main/04/demonstration1) для создания ВМ с помощью remote модуля.
-2. Создайте 1 ВМ, используя данный модуль. В файле cloud-init.yml необходимо использовать переменную для ssh ключа вместо хардкода. Передайте ssh-ключ в функцию template_file в блоке vars ={} .
-Воспользуйтесь [**примером**](https://grantorchard.com/dynamic-cloudinit-content-with-terraform-file-templates/). Обратите внимание что ssh-authorized-keys принимает в себя список, а не строку!
-
-*Передаём ssh-ключ используя функцию template_file*
-```
- vars = {
-    ssh_public_key = file(var.public_key[0])
-  }
-```
-
-*Переменная в variables.tf*
-```
-variable "public_key" {
-  type    = list(string)
-  default = ["~/.ssh/id_ed25519.pub"]
-}
-```
-
-3. Добавьте в файл cloud-init.yml установку nginx.
-```
-#cloud-config
-users:
-  - name: ubuntu
-    groups: sudo
-    shell: /bin/bash
-    sudo: ['ALL=(ALL) NOPASSWD:ALL']
-    ssh_authorized_keys:
-      - ${ssh_public_key}
-package_update: true
-package_upgrade: false
-packages:
- - vim
- - nginx
-```
-
-4. Предоставьте скриншот подключения к консоли и вывод команды ```sudo nginx -t```.
-
-![yc nginx -t](https://github.com/PatKolzin/terraform-04/assets/75835363/9b82bf45-f710-4dc8-83c4-449d4a2040f9)
-
-![nginx -t](https://github.com/PatKolzin/terraform-04/assets/75835363/8225f72e-368b-4e77-9b9e-e2637c90f519)
-
+1. Возьмите код:
+- из [ДЗ к лекции 4](https://github.com/netology-code/ter-homeworks/tree/main/04/src),
+- из [демо к лекции 4](https://github.com/netology-code/ter-homeworks/tree/main/04/demonstration1).
+2. Проверьте код с помощью tflint и checkov. Вам не нужно инициализировать этот проект.
+3. Перечислите, какие **типы** ошибок обнаружены в проекте (без дублей).
 
 ------
 
 ### Задание 2
 
-1. Напишите локальный модуль vpc, который будет создавать 2 ресурса: **одну** сеть и **одну** подсеть в зоне, объявленной при вызове модуля, например: ```ru-central1-a```.
-2. Вы должны передать в модуль переменные с названием сети, zone и v4_cidr_blocks.
+1. Возьмите ваш GitHub-репозиторий с **выполненным ДЗ 4** в ветке 'terraform-04' и сделайте из него ветку 'terraform-05'.
+2. Повторите демонстрацию лекции: настройте YDB, S3 bucket, yandex service account, права доступа и мигрируйте state проекта в S3 с блокировками. Предоставьте скриншоты процесса в качестве ответа.
+3. Закоммитьте в ветку 'terraform-05' все изменения.
+4. Откройте в проекте terraform console, а в другом окне из этой же директории попробуйте запустить terraform apply.
+5. Пришлите ответ об ошибке доступа к state.
+6. Принудительно разблокируйте state. Пришлите команду и вывод.
 
-![image](https://github.com/PatKolzin/terraform-04/assets/75835363/e3acfeb5-ce2b-4f77-a0b4-3d40b0b5e4e6)
 
+------
+### Задание 3  
 
-3. Модуль должен возвращать в root module с помощью output информацию о yandex_vpc_subnet. Пришлите скриншот информации из terraform console о своем модуле. Пример: > module.vpc_dev
+1. Сделайте в GitHub из ветки 'terraform-05' новую ветку 'terraform-hotfix'.
+2. Проверье код с помощью tflint и checkov, исправьте все предупреждения и ошибки в 'terraform-hotfix', сделайте коммит.
+3. Откройте новый pull request 'terraform-hotfix' --> 'terraform-05'. 
+4. Вставьте в комментарий PR результат анализа tflint и checkov, план изменений инфраструктуры из вывода команды terraform plan.
+5. Пришлите ссылку на PR для ревью. Вливать код в 'terraform-05' не нужно.
 
-![terr_console_module_vpc_dev](https://github.com/PatKolzin/terraform-04/assets/75835363/afbb09b6-638c-476f-b6d9-47ef1557e5ad)
+------
+### Задание 4
 
- 
-4. Замените ресурсы yandex_vpc_network и yandex_vpc_subnet созданным модулем. Не забудьте передать необходимые параметры сети из модуля vpc в модуль с виртуальной машиной.
+1. Напишите переменные с валидацией и протестируйте их, заполнив default верными и неверными значениями. Предоставьте скриншоты проверок из terraform console. 
 
-![module_test_vm_listing](https://github.com/PatKolzin/terraform-04/assets/75835363/2903268a-c5e6-41eb-b8b1-48571f032527)
+- type=string, description="ip-адрес" — проверка, что значение переменной содержит верный IP-адрес с помощью функций cidrhost() или regex(). Тесты:  "192.168.0.1" и "1920.1680.0.1";
+- type=list(string), description="список ip-адресов" — проверка, что все адреса верны. Тесты:  ["192.168.0.1", "1.1.1.1", "127.0.0.1"] и ["192.168.0.1", "1.1.1.1", "1270.0.0.1"].
 
-5. Откройте terraform console и предоставьте скриншот содержимого модуля. Пример: > module.vpc_dev.
+## Дополнительные задания (со звёздочкой*)
 
-![terr_console_module_vpc_dev](https://github.com/PatKolzin/terraform-04/assets/75835363/71f2828d-5edf-48e9-b443-19607fd46239)
-
-6. Сгенерируйте документацию к модулю с помощью terraform-docs.    
-
-![image](https://github.com/PatKolzin/terraform-04/assets/75835363/7ad4d2e5-8576-4da1-8975-3ce41ef359ec)
-
- 
-Пример вызова:
+**Настоятельно рекомендуем выполнять все задания со звёздочкой.** Их выполнение поможет глубже разобраться в материале.   
+Задания со звёздочкой дополнительные, не обязательные к выполнению и никак не повлияют на получение вами зачёта по этому домашнему заданию. 
+------
+### Задание 5*
+1. Напишите переменные с валидацией:
+- type=string, description="любая строка" — проверка, что строка не содержит символов верхнего регистра;
+- type=object — проверка, что одно из значений равно true, а второе false, т. е. не допускается false false и true true:
 ```
-module "vpc_dev" {
-  source       = "./vpc"
-  env_name     = "develop"
-  zone = "ru-central1-a"
-  cidr = "10.0.1.0/24"
+variable "in_the_end_there_can_be_only_one" {
+    description="Who is better Connor or Duncan?"
+    type = object({
+        Dunkan = optional(bool)
+        Connor = optional(bool)
+    })
+
+    default = {
+        Dunkan = true
+        Connor = false
+    }
+
+    validation {
+        error_message = "There can be only one MacLeod"
+        condition = <проверка>
+    }
 }
 ```
+------
+### Задание 6*
+
+1. Настройте любую известную вам CI/CD-систему. Если вы ещё не знакомы с CI/CD-системами, настоятельно рекомендуем вернуться к этому заданию после изучения Jenkins/Teamcity/Gitlab.
+2. Скачайте с её помощью ваш репозиторий с кодом и инициализируйте инфраструктуру.
+3. Уничтожьте инфраструктуру тем же способом.
 
 
+### Правила приёма работы
 
-### Задание 3
-1. Выведите список ресурсов в стейте.
-![image](https://github.com/PatKolzin/terraform-04/assets/75835363/e5fd6eb5-796d-4aa6-a1ef-82ebd926341f)
+Ответы на задания и необходимые скриншоты оформите в md-файле в ветке terraform-05.
 
-2. Полностью удалите из стейта модуль vpc.
-![image](https://github.com/PatKolzin/terraform-04/assets/75835363/8cafaed0-2974-4cda-8de9-d6ae659a402e)
+В качестве результата прикрепите ссылку на ветку terraform-05 в вашем репозитории.
 
-3. Полностью удалите из стейта модуль vm.
-![image](https://github.com/PatKolzin/terraform-04/assets/75835363/8c97205c-4a24-4a85-9dc7-f80dacb82b76)
+**Важно.** Удалите все созданные ресурсы.
 
-4. Импортируйте всё обратно. Проверьте terraform plan. Изменений быть не должно.
-![image](https://github.com/PatKolzin/terraform-04/assets/75835363/75784598-5f00-4859-92fd-e0121bccd067)
-![image](https://github.com/PatKolzin/terraform-04/assets/75835363/1ecd9d8e-045f-4b6b-a6d7-0c80ba03d6b0)
-![image](https://github.com/PatKolzin/terraform-04/assets/75835363/ad5c35ad-0a4c-439d-8f7f-75a58d36acf4)
-![image](https://github.com/PatKolzin/terraform-04/assets/75835363/b18cd018-0cfd-4a39-a3f4-82bc726143e8)
+### Критерии оценки
 
-![image](https://github.com/PatKolzin/terraform-04/assets/75835363/6a955a22-b718-443f-b68f-fb0888c8ab83)
+Зачёт ставится, если:
+
+* выполнены все задания,
+* ответы даны в развёрнутой форме,
+* приложены соответствующие скриншоты и файлы проекта,
+* в выполненных заданиях нет противоречий и нарушения логики.
+
+На доработку работу отправят, если:
+
+* задание выполнено частично или не выполнено вообще,
+* в логике выполнения заданий есть противоречия и существенные недостатки. 
 
 
-
-
-Приложите список выполненных команд и скриншоты процессы.
-
-## Дополнительные задания (со звездочкой*)
-
-**Настоятельно рекомендуем выполнять все задания под звёздочкой.**   Их выполнение поможет глубже разобраться в материале.   
-Задания под звёздочкой дополнительные (необязательные к выполнению) и никак не повлияют на получение вами зачета по этому домашнему заданию. 
 
 
